@@ -30,22 +30,13 @@
   button:hover { filter: brightness(1.15); }
   #msg { color: #8fd; min-height: 1.2em; }
   #msg.err { color: #f88; }
-  #linkbox { display: none; width: 100%; }
-  #linkbox input {
-    width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #2b3047;
-    background: #0d0f16; color: #d6e2ff; font: 13px ui-monospace, monospace;
-  }
-  #incoming {
-    display: none; flex: 1; align-items: center; justify-content: center; flex-direction: column; gap: 16px;
-  }
-  #incoming button { font-size: 1.6rem; padding: 22px 48px; }
   small { color: #789; }
 </style>
 </head>
 <body>
 <header>
   <h1>🎮 Paste &amp; Play</h1>
-  <p class="sub">Paste your game's HTML, press Play. Share it with a link. Nothing is uploaded or stored.</p>
+  <p class="sub">Paste your game's HTML, press Play. Nothing is uploaded or stored.</p>
 </header>
 
 <main id="editor">
@@ -53,53 +44,15 @@
     placeholder="Paste your full HTML game code here…"></textarea>
   <div class="row">
     <button class="primary" id="play">▶ Play</button>
-    <button id="share">🔗 Make share link</button>
     <button id="clear">Clear</button>
     <span id="msg"></span>
   </div>
-  <div id="linkbox">
-    <input id="link" readonly>
-    <small>Link copied. Anyone who opens it can play your game. (Very big games make very long links.)</small>
-  </div>
-</main>
-
-<main id="incoming">
-  <h1>Someone shared a game with you</h1>
-  <button class="primary" id="playShared">▶ Play</button>
-  <small>It opens full page, so the game can go fullscreen.</small>
 </main>
 
 <script>
 (function () {
   const $ = id => document.getElementById(id);
   const msg = (t, err) => { $('msg').textContent = t; $('msg').className = err ? 'err' : ''; };
-
-  // ---- encode / decode (deflate + base64url, fallback to plain base64) ----
-  const b64url = bytes => {
-    let s = ''; for (let i = 0; i < bytes.length; i += 0x8000)
-      s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  };
-  const unb64url = str => {
-    str = str.replace(/-/g, '+').replace(/_/g, '/');
-    while (str.length % 4) str += '=';
-    const bin = atob(str), out = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-    return out;
-  };
-  const pipe = async (bytes, stream) => new Uint8Array(
-    await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
-
-  async function encode(text) {
-    const raw = new TextEncoder().encode(text);
-    if (window.CompressionStream) return 'z' + b64url(await pipe(raw, new CompressionStream('deflate-raw')));
-    return 'r' + b64url(raw);
-  }
-  async function decode(s) {
-    const bytes = unb64url(s.slice(1));
-    const raw = s[0] === 'z' ? await pipe(bytes, new DecompressionStream('deflate-raw')) : bytes;
-    return new TextDecoder().decode(raw);
-  }
 
   // ---- run a game as its own top-level page (so fullscreen works) ----
   function blobUrl(html) {
@@ -114,19 +67,7 @@
     else msg('');
   };
 
-  $('share').onclick = async () => {
-    const html = $('code').value;
-    if (!html.trim()) return msg('Paste some code first!', true);
-    try {
-      const url = location.origin + location.pathname + '#g=' + await encode(html);
-      $('link').value = url; $('linkbox').style.display = 'block';
-      $('link').select();
-      try { await navigator.clipboard.writeText(url); msg('Link copied!'); }
-      catch { msg('Select the link below and copy it.'); }
-    } catch (e) { msg('Could not make a link: ' + e.message, true); }
-  };
-
-  $('clear').onclick = () => { $('code').value = ''; $('linkbox').style.display = 'none'; msg(''); };
+  $('clear').onclick = () => { $('code').value = ''; msg(''); };
 
   // allow Tab key in textarea
   $('code').addEventListener('keydown', e => {
@@ -137,16 +78,6 @@
     t.selectionStart = t.selectionEnd = s + 2;
   });
 
-  // ---- opened via a share link ----
-  const m = location.hash.match(/^#g=(.+)$/);
-  if (m) {
-    $('editor').style.display = 'none';
-    $('incoming').style.display = 'flex';
-    $('playShared').onclick = async () => {
-      try { location.href = blobUrl(await decode(m[1])); }
-      catch (e) { alert('This link looks broken or incomplete.'); }
-    };
-  }
 })();
 </script>
 </body>

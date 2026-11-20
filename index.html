@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paste &amp; Play</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+    font-family: system-ui, sans-serif; background: #14161f; color: #e8e8f0;
+  }
+  header { padding: 16px 24px 0; }
+  h1 { margin: 0; font-size: 1.5rem; }
+  p.sub { margin: 4px 0 0; color: #9aa; font-size: .95rem; }
+  main { flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 24px; }
+  textarea {
+    flex: 1; min-height: 50vh; width: 100%; resize: vertical;
+    background: #0d0f16; color: #d6e2ff; border: 2px solid #2b3047; border-radius: 8px;
+    padding: 12px; font: 14px/1.4 ui-monospace, Menlo, Consolas, monospace; tab-size: 2;
+  }
+  textarea:focus { outline: none; border-color: #5b8cff; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  button {
+    font: inherit; font-weight: 600; padding: 12px 22px; border: 0; border-radius: 8px;
+    cursor: pointer; color: #fff; background: #2b3047;
+  }
+  button.primary { background: #2e9e5b; font-size: 1.1rem; }
+  button:hover { filter: brightness(1.15); }
+  #msg { color: #8fd; min-height: 1.2em; }
+  #msg.err { color: #f88; }
+  #linkbox { display: none; width: 100%; }
+  #linkbox input {
+    width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #2b3047;
+    background: #0d0f16; color: #d6e2ff; font: 13px ui-monospace, monospace;
+  }
+  #incoming {
+    display: none; flex: 1; align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+  }
+  #incoming button { font-size: 1.6rem; padding: 22px 48px; }
+  small { color: #789; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎮 Paste &amp; Play</h1>
+  <p class="sub">Paste your game's HTML, press Play. Share it with a link. Nothing is uploaded or stored.</p>
+</header>
+
+<main id="editor">
+  <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off"
+    placeholder="Paste your full HTML game code here…"></textarea>
+  <div class="row">
+    <button class="primary" id="play">▶ Play</button>
+    <button id="share">🔗 Make share link</button>
+    <button id="clear">Clear</button>
+    <span id="msg"></span>
+  </div>
+  <div id="linkbox">
+    <input id="link" readonly>
+    <small>Link copied. Anyone who opens it can play your game. (Very big games make very long links.)</small>
+  </div>
+</main>
+
+<main id="incoming">
+  <h1>Someone shared a game with you</h1>
+  <button class="primary" id="playShared">▶ Play</button>
+  <small>It opens full page, so the game can go fullscreen.</small>
+</main>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const msg = (t, err) => { $('msg').textContent = t; $('msg').className = err ? 'err' : ''; };
+
+  // ---- encode / decode (deflate + base64url, fallback to plain base64) ----
+  const b64url = bytes => {
+    let s = ''; for (let i = 0; i < bytes.length; i += 0x8000)
+      s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  };
+  const unb64url = str => {
+    str = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (str.length % 4) str += '=';
+    const bin = atob(str), out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  };
+  const pipe = async (bytes, stream) => new Uint8Array(
+    await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+
+  async function encode(text) {
+    const raw = new TextEncoder().encode(text);
+    if (window.CompressionStream) return 'z' + b64url(await pipe(raw, new CompressionStream('deflate-raw')));
+    return 'r' + b64url(raw);
+  }
+  async function decode(s) {
+    const bytes = unb64url(s.slice(1));
+    const raw = s[0] === 'z' ? await pipe(bytes, new DecompressionStream('deflate-raw')) : bytes;
+    return new TextDecoder().decode(raw);
+  }
+
+  // ---- run a game as its own top-level page (so fullscreen works) ----
+  function blobUrl(html) {
+    return URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+  }
+
+  $('play').onclick = () => {
+    const html = $('code').value;
+    if (!html.trim()) return msg('Paste some code first!', true);
+    const w = window.open(blobUrl(html), '_blank');
+    if (!w) msg('Pop-up blocked. Allow pop-ups for this site and try again.', true);
+    else msg('');
+  };
+
+  $('share').onclick = async () => {
+    const html = $('code').value;
+    if (!html.trim()) return msg('Paste some code first!', true);
+    try {
+      const url = location.origin + location.pathname + '#g=' + await encode(html);
+      $('link').value = url; $('linkbox').style.display = 'block';
+      $('link').select();
+      try { await navigator.clipboard.writeText(url); msg('Link copied!'); }
+      catch { msg('Select the link below and copy it.'); }
+    } catch (e) { msg('Could not make a link: ' + e.message, true); }
+  };
+
+  $('clear').onclick = () => { $('code').value = ''; $('linkbox').style.display = 'none'; msg(''); };
+
+  // allow Tab key in textarea
+  $('code').addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    e.preventDefault();
+    const t = e.target, s = t.selectionStart;
+    t.value = t.value.slice(0, s) + '  ' + t.value.slice(t.selectionEnd);
+    t.selectionStart = t.selectionEnd = s + 2;
+  });
+
+  // ---- opened via a share link ----
+  const m = location.hash.match(/^#g=(.+)$/);
+  if (m) {
+    $('editor').style.display = 'none';
+    $('incoming').style.display = 'flex';
+    $('playShared').onclick = async () => {
+      try { location.href = blobUrl(await decode(m[1])); }
+      catch (e) { alert('This link looks broken or incomplete.'); }
+    };
+  }
+})();
+</script>
+</body>
+</html>

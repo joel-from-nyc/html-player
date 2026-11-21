@@ -21,6 +21,7 @@
     padding: 12px; font: 14px/1.4 ui-monospace, Menlo, Consolas, monospace; tab-size: 2;
   }
   textarea:focus { outline: none; border-color: #5b8cff; }
+  body.dragging textarea { border-color: #2e9e5b; background: #10201a; }
   .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   button {
     font: inherit; font-weight: 600; padding: 12px 22px; border: 0; border-radius: 8px;
@@ -68,6 +69,28 @@
   };
 
   $('clear').onclick = () => { $('code').value = ''; msg(''); };
+
+  // drag & drop a text/HTML file to fill the box
+  const dropOk = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+  ['dragenter', 'dragover'].forEach(ev => window.addEventListener(ev, e => {
+    if (!dropOk(e)) return;
+    e.preventDefault(); document.body.classList.add('dragging');
+  }));
+  window.addEventListener('dragleave', e => {
+    if (!e.relatedTarget) document.body.classList.remove('dragging');
+  });
+  window.addEventListener('drop', async e => {
+    if (!dropOk(e)) return;
+    e.preventDefault(); document.body.classList.remove('dragging');
+    const f = e.dataTransfer.files[0];
+    if (!f) return;
+    if (f.size > 5 * 1024 * 1024) return msg('That file is too big (5 MB max).', true);
+    const text = await f.text();
+    if (text.indexOf('\u0000') !== -1 || text.indexOf('\uFFFD') !== -1)
+      return msg("That doesn't look like a text file.", true);
+    $('code').value = text;
+    msg('Loaded ' + f.name);
+  });
 
   // allow Tab key in textarea
   $('code').addEventListener('keydown', e => {

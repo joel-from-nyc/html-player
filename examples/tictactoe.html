@@ -1,33 +1,92 @@
 <!DOCTYPE html>
 <title>Cat vs Dog</title>
 <style>
-  body { margin:0; height:100vh; display:grid; place-items:center; background:#234; color:#fff; font:700 5vmin sans-serif; text-align:center }
-  #b { position:relative; display:grid; grid-template-columns:repeat(3,22vmin); gap:1.5vmin }
-  button { height:22vmin; font-size:14vmin; border:0; border-radius:2vmin; background:#fff3 }
+  body { margin: 0; height: 100vh; display: grid; place-items: center;
+         background: #234; color: white; font: bold 5vmin sans-serif; text-align: center; }
+  #board { position: relative; display: grid;
+           grid-template-columns: repeat(3, 22vmin); gap: 1.5vmin; }
+  #board svg { position: absolute; inset: 0; width: 100%; height: 100%;
+               pointer-events: none; overflow: visible; }
+  .square { height: 22vmin; font-size: 14vmin; border: 0; border-radius: 2vmin;
+            background: #fff3; }
+  #newGame { font-size: 4vmin; padding: 1vmin 3vmin; color: white;
+             background: #fff3; border: 0; border-radius: 2vmin; }
 </style>
-<div id=s></div><div id=b></div><button onclick=go() style="height:auto;font-size:4vmin;padding:1vmin 3vmin;color:#fff">New game</button>
+
+<div id="message"></div>
+<div id="board"></div>
+<button id="newGame" onclick="newGame()">New game</button>
+
 <script>
-const W=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-let g,t,over;
-function go(){ g=Array(9).fill(''); t='🐱'; over=0; draw(t+"'s turn"); }
-function draw(m,l){
-  s.textContent=m;
-  b.innerHTML=g.map((c,i)=>`<button onclick=play(${i})>${c}</button>`).join('');
-  if(l){ // line through the winning three, from first to last cell centre
-    let p=k=>[k%3*23.5+11,(k/3|0)*23.5+11], [x1,y1]=p(l[0]), [x2,y2]=p(l[2]);
-    let dx=x2-x1, dy=y2-y1, n=Math.hypot(dx,dy), ux=dx/n, uy=dy/n;
-    let e=11/Math.max(Math.abs(ux),Math.abs(uy))+3.45; // out to the box edge, plus 5%
-    x1-=ux*e; y1-=uy*e; x2+=ux*e; y2+=uy*e;
-    b.innerHTML+=`<svg viewBox="0 0 69 69" style="position:absolute;inset:0;overflow:visible;pointer-events:none"><line x1=${x1} y1=${y1} x2=${x2} y2=${y2} stroke=#fd0 stroke-width=2 stroke-linecap=round /></svg>`;
+// Want different players? Change these two emoji!
+const PLAYER_1 = '🐱';
+const PLAYER_2 = '🐶';
+
+// The squares are numbered 0 to 8, left to right, top to bottom.
+// These are all 8 ways to win: 3 rows, 3 columns and 2 diagonals.
+const WINNING_LINES = [
+  [0, 1, 2], [3, 4, 5], [6, 7, 8],
+  [0, 3, 6], [1, 4, 7], [2, 5, 8],
+  [0, 4, 8], [2, 4, 6],
+];
+
+let squares;         // what is in each square: '' (empty) or a player's emoji
+let currentPlayer;   // whose turn it is
+let gameOver;
+
+function newGame() {
+  squares = ['', '', '', '', '', '', '', '', ''];
+  currentPlayer = PLAYER_1;
+  gameOver = false;
+  draw(currentPlayer + "'s turn");
+}
+
+function play(i) {
+  if (squares[i] !== '' || gameOver) return;   // ignore taken squares
+  squares[i] = currentPlayer;
+
+  const winningLine = findWinningLine();
+  if (winningLine) {
+    gameOver = true;
+    draw(currentPlayer + ' wins! 🎉', winningLine);
+  } else if (!squares.includes('')) {          // no empty squares left
+    gameOver = true;
+    draw("It's a tie!");
+  } else {
+    currentPlayer = (currentPlayer === PLAYER_1) ? PLAYER_2 : PLAYER_1;
+    draw(currentPlayer + "'s turn");
   }
 }
-function play(i){
-  if(g[i]||over) return;
-  g[i]=t;
-  let w=W.find(l=>l.every(k=>g[k]==t));
-  if(w){ over=1; return draw(t+' wins! 🎉',w); }
-  if(g.every(c=>c)){ over=1; return draw("It's a tie!"); }
-  t=t=='🐱'?'🐶':'🐱'; draw(t+"'s turn");
+
+// Find a line where all 3 squares belong to the current player
+function findWinningLine() {
+  return WINNING_LINES.find(line =>
+    line.every(i => squares[i] === currentPlayer));
 }
-go();
+
+function draw(text, winningLine) {
+  message.textContent = text;
+  board.innerHTML = '';
+  for (let i = 0; i < 9; i++) {
+    board.innerHTML += `<button class="square" onclick="play(${i})">${squares[i]}</button>`;
+  }
+  if (winningLine) drawWinningLine(winningLine);
+}
+
+function drawWinningLine(line) {
+  // Each square is 1 unit wide, so square number i has its middle at:
+  const first = {x: line[0] % 3 + 0.5, y: Math.floor(line[0] / 3) + 0.5};
+  const last  = {x: line[2] % 3 + 0.5, y: Math.floor(line[2] / 3) + 0.5};
+  // Stretch the line a little past both ends
+  const moreX = Math.sign(last.x - first.x) * 0.65;
+  const moreY = Math.sign(last.y - first.y) * 0.65;
+  board.innerHTML += `
+    <svg viewBox="0 0 3 3">
+      <line x1="${first.x - moreX}" y1="${first.y - moreY}"
+            x2="${last.x + moreX}" y2="${last.y + moreY}"
+            stroke="gold" stroke-width="0.09" stroke-linecap="round" />
+    </svg>`;
+}
+
+newGame();
 </script>

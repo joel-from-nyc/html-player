@@ -33,6 +33,9 @@
   #msg { color: #8fd; min-height: 1.2em; }
   #msg.err { color: #f88; }
   small { color: #789; }
+  #ver { cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: background .25s, color .25s; user-select: none; }
+  #ver.flash { background: #2e9e5b; color: #fff; }
+  #ver.flash.white { background: #fff; color: #14161f; }
   footer { display: flex; justify-content: space-between; gap: 16px; padding: 0 24px 14px; color: #678; font-size: .8rem; }
   dialog { background: #1b1f2e; color: #e8e8f0; border: 2px solid #5b8cff; border-radius: 12px; padding: 20px 24px; max-width: 420px; }
   dialog::backdrop { background: rgba(0,0,0,.6); }
@@ -59,7 +62,7 @@
 
 <footer>
   <span>Nothing opened? Allow pop-ups for this site (icon at the right end of the address bar).</span>
-  <span>v0.1.8</span>
+  <span id="ver" title="Tap to check for updates">v0.1.9</span>
 </footer>
 
 <dialog id="ask">
@@ -112,6 +115,19 @@
       $('code').value = await r.text();
       msg('Sample loaded. Press Play!');
     } catch (e) { msg("Couldn't load the sample game.", true); }
+  };
+
+  // Tap the version: if a newer version is live, reload; if not, flash white/green.
+  $('ver').onclick = async () => {
+    const ver = $('ver');
+    try {
+      const r = await fetch(location.pathname + '?check=' + Date.now(), { cache: 'no-store' });
+      const live = (await r.text()).match(/id="ver"[^>]*>([^<]+)</);
+      if (live && live[1].trim() !== ver.textContent.trim()) return location.reload();
+    } catch (e) { return location.reload(); }   // couldn't check, so just refresh
+    ver.classList.add('flash');
+    [0, 250, 500, 750].forEach((t, i) => setTimeout(() => ver.classList.toggle('white', i % 2 === 0), t));
+    setTimeout(() => ver.classList.remove('flash', 'white'), 1000);
   };
 
   $('clear').onclick = () => { $('code').value = ''; msg(''); };

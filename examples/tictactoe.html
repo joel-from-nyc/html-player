@@ -15,7 +15,10 @@ function draw(m,l){
   b.innerHTML=g.map((c,i)=>`<button onclick=play(${i})>${c}</button>`).join('');
   if(l){ // line through the winning three, from first to last cell centre
     let p=k=>[k%3*23.5+11,(k/3|0)*23.5+11], [x1,y1]=p(l[0]), [x2,y2]=p(l[2]);
-    b.innerHTML+=`<svg viewBox="0 0 69 69" style="position:absolute;inset:0;pointer-events:none"><line x1=${x1} y1=${y1} x2=${x2} y2=${y2} stroke=#fd0 stroke-width=2 stroke-linecap=round /></svg>`;
+    let dx=x2-x1, dy=y2-y1, n=Math.hypot(dx,dy), ux=dx/n, uy=dy/n;
+    let e=11/Math.max(Math.abs(ux),Math.abs(uy))+3.45; // out to the box edge, plus 5%
+    x1-=ux*e; y1-=uy*e; x2+=ux*e; y2+=uy*e;
+    b.innerHTML+=`<svg viewBox="0 0 69 69" style="position:absolute;inset:0;overflow:visible;pointer-events:none"><line x1=${x1} y1=${y1} x2=${x2} y2=${y2} stroke=#fd0 stroke-width=2 stroke-linecap=round /></svg>`;
   }
 }
 function play(i){

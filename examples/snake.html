@@ -31,7 +31,7 @@ function draw() {
   pen.clearRect(0, 0, 400, 400);
   pen.fillText('🍎', food.x * 20, food.y * 20 + 16);
   snake.forEach((s, i) => {
-    pen.fillText(i == 0 ? '🐍' : '🟢', s.x * 20, s.y * 20 + 16);
+    pen.fillText(i == 0 ? '🐍' : '🟩', s.x * 20, s.y * 20 + 16);
   });
 }
 onkeydown = e => {

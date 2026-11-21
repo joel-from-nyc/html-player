@@ -32,6 +32,10 @@
   #msg { color: #8fd; min-height: 1.2em; }
   #msg.err { color: #f88; }
   small { color: #789; }
+  dialog { background: #1b1f2e; color: #e8e8f0; border: 2px solid #5b8cff; border-radius: 12px; padding: 20px 24px; max-width: 420px; }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+  dialog p { margin: 0 0 16px; }
+  dialog .row { justify-content: flex-end; }
 </style>
 </head>
 <body>
@@ -49,6 +53,15 @@
     <span id="msg"></span>
   </div>
 </main>
+
+<dialog id="ask">
+  <p id="askText"></p>
+  <div class="row">
+    <button id="askReplace" class="primary">Replace</button>
+    <button id="askAdd">Add to end</button>
+    <button id="askCancel">Cancel</button>
+  </div>
+</dialog>
 
 <script>
 (function () {
@@ -88,7 +101,22 @@
     const text = await f.text();
     if (text.indexOf('\u0000') !== -1 || text.indexOf('\uFFFD') !== -1)
       return msg("That doesn't look like a text file.", true);
-    $('code').value = text;
+    const box = $('code');
+    if (box.value.trim()) {
+      $('askText').textContent = 'The box already has code. What should I do with ' + f.name + '?';
+      const choice = await new Promise(res => {
+        const d = $('ask');
+        const done = v => () => { d.close(); res(v); };
+        $('askReplace').onclick = done('replace');
+        $('askAdd').onclick = done('add');
+        $('askCancel').onclick = done('cancel');
+        d.oncancel = () => res('cancel');
+        d.showModal();
+      });
+      if (choice === 'cancel') return msg('');
+      if (choice === 'add') { box.value = box.value.replace(/\s*$/, '') + '\n' + text; return msg('Added ' + f.name + ' to the end'); }
+    }
+    box.value = text;
     msg('Loaded ' + f.name);
   });
 

@@ -2,7 +2,7 @@
 <title>Cat vs Dog</title>
 <style>
   body { margin:0; height:100vh; display:grid; place-items:center; background:#234; color:#fff; font:700 5vmin sans-serif; text-align:center }
-  #b { display:grid; grid-template-columns:repeat(3,22vmin); gap:1.5vmin }
+  #b { position:relative; display:grid; grid-template-columns:repeat(3,22vmin); gap:1.5vmin }
   button { height:22vmin; font-size:14vmin; border:0; border-radius:2vmin; background:#fff3 }
 </style>
 <div id=s></div><div id=b></div><button onclick=go() style="height:auto;font-size:4vmin;padding:1vmin 3vmin;color:#fff">New game</button>
@@ -10,14 +10,19 @@
 const W=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 let g,t,over;
 function go(){ g=Array(9).fill(''); t='🐱'; over=0; draw(t+"'s turn"); }
-function draw(m){
+function draw(m,l){
   s.textContent=m;
   b.innerHTML=g.map((c,i)=>`<button onclick=play(${i})>${c}</button>`).join('');
+  if(l){ // line through the winning three, from first to last cell centre
+    let p=k=>[k%3*23.5+11,(k/3|0)*23.5+11], [x1,y1]=p(l[0]), [x2,y2]=p(l[2]);
+    b.innerHTML+=`<svg viewBox="0 0 69 69" style="position:absolute;inset:0;pointer-events:none"><line x1=${x1} y1=${y1} x2=${x2} y2=${y2} stroke=#fd0 stroke-width=2 stroke-linecap=round /></svg>`;
+  }
 }
 function play(i){
   if(g[i]||over) return;
   g[i]=t;
-  if(W.some(l=>l.every(k=>g[k]==t))){ over=1; return draw(t+' wins! 🎉'); }
+  let w=W.find(l=>l.every(k=>g[k]==t));
+  if(w){ over=1; return draw(t+' wins! 🎉',w); }
   if(g.every(c=>c)){ over=1; return draw("It's a tie!"); }
   t=t=='🐱'?'🐶':'🐱'; draw(t+"'s turn");
 }

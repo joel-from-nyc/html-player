@@ -15,7 +15,6 @@
   header { padding: 16px 24px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
   h1 { margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
   h1 img { display: block; }
-  p.sub { margin: 4px 0 0; color: #9aa; font-size: .95rem; }
   main { flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 24px; }
   textarea {
     flex: 1; min-height: 50vh; width: 100%; resize: vertical;
@@ -29,10 +28,12 @@
   #bar button { white-space: nowrap; padding: 12px clamp(10px, 3vw, 22px); font-size: clamp(.8rem, 3.8vw, 1rem); }
   #bar button.primary { font-size: clamp(.9rem, 4.2vw, 1.1rem); }
   #bar #paste { background: #2f6fe0; padding-inline: 14px; display: inline-flex; align-items: center; }
+  #bar #upload { background: #e8861a; padding-inline: 14px; display: inline-flex; align-items: center; }
   #bar #clear { background: #8a2c36; }
   #bar #sample { margin-left: auto; font-size: clamp(.72rem, 3.2vw, .9rem); font-weight: 500; }
   #sample .short { display: none; }
-  @media (max-width: 300px) { #bar button { padding-inline: 6px !important; } #bar #paste { padding-inline: 10px !important; } }
+  @media (max-width: 380px) { #bar { gap: 4px; } #bar button { padding-inline: 7px !important; } #bar #paste, #bar #upload { padding-inline: 8px !important; } #bar svg { width: 20px; height: 20px; } }
+  @media (max-width: 300px) { #bar button { padding-inline: 5px !important; font-size: .75rem !important; } #bar #paste, #bar #upload { padding-inline: 6px !important; } }
   @media (max-width: 420px) { #sample .long { display: none; } #sample .short { display: inline; } }
   button {
     font: inherit; font-weight: 600; padding: 12px 22px; border: 0; border-radius: 8px;
@@ -62,19 +63,22 @@
 <header>
   <div>
     <h1><img src="favicon.svg" alt="" width="34" height="34"> Paste &amp; Play</h1>
-    <p class="sub">Paste your HTML</p>
   </div>
-  <span id="ver" title="Tap to check for updates">v0.1.14</span>
+  <span id="ver" title="Tap to check for updates">v0.1.15</span>
 </header>
 
 <main id="editor">
   <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off"
-    placeholder="Paste your HTML"></textarea>
+    placeholder="Paste your HTML or drop a file here."></textarea>
   <span id="msg"></span>
   <div id="bar">
     <button id="paste" aria-label="Paste from clipboard" title="Paste from clipboard">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/></svg>
     </button>
+    <button id="upload" aria-label="Upload a file" title="Upload a file">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+    </button>
+    <input type="file" id="file" hidden>
     <button class="primary" id="play">▶ Play</button>
     <button id="clear">Clear</button>
     <button id="sample"><span class="long">Show sample</span><span class="short">Sample</span></button>
@@ -173,6 +177,16 @@
     }
   };
 
+  // Read a text/HTML file into the box (shared by drag & drop and the upload button).
+  async function loadFile(f) {
+    if (!f) return;
+    if (f.size > 5 * 1024 * 1024) return msg('That file is too big (5 MB max).', true);
+    const text = await f.text();
+    if (text.indexOf('\u0000') !== -1 || text.indexOf('\uFFFD') !== -1)
+      return msg("That doesn't look like a text file.", true);
+    putText(text, f.name);
+  }
+
   // drag & drop a text/HTML file to fill the box
   const dropOk = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
   ['dragenter', 'dragover'].forEach(ev => window.addEventListener(ev, e => {
@@ -185,14 +199,12 @@
   window.addEventListener('drop', async e => {
     if (!dropOk(e)) return;
     e.preventDefault(); document.body.classList.remove('dragging');
-    const f = e.dataTransfer.files[0];
-    if (!f) return;
-    if (f.size > 5 * 1024 * 1024) return msg('That file is too big (5 MB max).', true);
-    const text = await f.text();
-    if (text.indexOf('\u0000') !== -1 || text.indexOf('\uFFFD') !== -1)
-      return msg("That doesn't look like a text file.", true);
-    putText(text, f.name);
+    loadFile(e.dataTransfer.files[0]);
   });
+
+  // Upload button: pick a file from the device
+  $('upload').onclick = () => $('file').click();
+  $('file').onchange = e => { loadFile(e.target.files[0]); e.target.value = ''; };
 
   // allow Tab key in textarea
   $('code').addEventListener('keydown', e => {

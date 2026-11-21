@@ -57,7 +57,7 @@
     <h1>🎮 Paste &amp; Play</h1>
     <p class="sub">Paste your HTML</p>
   </div>
-  <span id="ver" title="Tap to check for updates">v0.1.11</span>
+  <span id="ver" title="Tap to check for updates">v0.1.12</span>
 </header>
 
 <main id="editor">
@@ -92,23 +92,9 @@
   // ---- run a game as its own top-level page (so fullscreen works) ----
   // Content-Security-Policy added to every game: no outside network, scripts,
   // frames or form posts. Inline code, canvas, audio, inputs and localStorage still work.
-  // Scripts may load from these library CDNs (Three.js, Phaser, p5, etc.). Everything else
-  // stays blocked, and connect-src 'none' means no code can send data anywhere.
-  const CDNS = 'https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://ajax.googleapis.com';
-  const CSP = "default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob: " + CDNS + "; " +
-    "style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; font-src data:; " +
-    "worker-src blob:; connect-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'";
-  const META = '<meta http-equiv="Content-Security-Policy" content="' + CSP + '">';
-
-  function withPolicy(html) {
-    // insert right after any leading comments/doctype so the doctype (and layout mode) is kept
-    const m = html.match(/^\s*(?:<!--[\s\S]*?-->\s*)*(?:<!doctype[^>]*>)?/i);
-    const i = m ? m[0].length : 0;
-    return html.slice(0, i) + META + html.slice(i);
-  }
-
+  // No content restrictions: games can load libraries, fonts, images and make network requests.
   function blobUrl(html) {
-    return URL.createObjectURL(new Blob([withPolicy(html)], { type: 'text/html;charset=utf-8' }));
+    return URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
   }
 
   $('play').onclick = () => {

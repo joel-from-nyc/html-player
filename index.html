@@ -24,9 +24,12 @@
   textarea:focus { outline: none; border-color: #5b8cff; }
   body.dragging textarea { border-color: #2e9e5b; background: #10201a; }
   .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-  #bar { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; }
+  #bar { display: flex; flex-wrap: nowrap; gap: 8px; align-items: stretch; }
   #bar button { white-space: nowrap; padding: 12px clamp(10px, 3vw, 22px); font-size: clamp(.8rem, 3.8vw, 1rem); }
   #bar button.primary { font-size: clamp(.9rem, 4.2vw, 1.1rem); }
+  #bar #paste { background: #2f6fe0; padding-inline: 14px; display: inline-flex; align-items: center; }
+  #bar #clear { background: #8a2c36; }
+  button.linkbtn { background: none; padding: 0; color: #8ab; font-size: .8rem; font-weight: 400; text-decoration: underline; white-space: nowrap; }
   button {
     font: inherit; font-weight: 600; padding: 12px 22px; border: 0; border-radius: 8px;
     cursor: pointer; color: #fff; background: #2b3047;
@@ -39,7 +42,7 @@
   #ver { font-size: .72rem; color: #678; flex: none; cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: background .25s, color .25s; user-select: none; }
   #ver.flash { background: #2e9e5b; color: #fff; }
   #ver.flash.white { background: #fff; color: #14161f; }
-  footer { display: flex; justify-content: space-between; gap: 16px; padding: 0 24px 14px; color: #678; font-size: .8rem; }
+  footer { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; padding: 0 24px 14px; color: #678; font-size: .8rem; }
   @media (max-width: 420px) {
     header, main, footer { padding-inline: 12px; }
     #bar { gap: 6px; }
@@ -57,7 +60,7 @@
     <h1>🎮 Paste &amp; Play</h1>
     <p class="sub">Paste your HTML</p>
   </div>
-  <span id="ver" title="Tap to check for updates">v0.1.12</span>
+  <span id="ver" title="Tap to check for updates">v0.1.13</span>
 </header>
 
 <main id="editor">
@@ -65,14 +68,17 @@
     placeholder="Paste your HTML"></textarea>
   <span id="msg"></span>
   <div id="bar">
+    <button id="paste" aria-label="Paste from clipboard" title="Paste from clipboard">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/></svg>
+    </button>
     <button class="primary" id="play">▶ Play</button>
     <button id="clear">Clear</button>
-    <button id="sample" style="margin-left:auto">Show sample game</button>
   </div>
 </main>
 
 <footer>
   <span>Nothing opened? Allow pop-ups for this site (icon at the right end of the address bar).</span>
+  <button id="sample" class="linkbtn">Show sample game</button>
 </footer>
 
 <dialog id="ask">
@@ -131,6 +137,38 @@
 
   $('clear').onclick = () => { $('code').value = ''; msg(''); };
 
+  // Put text in the box. If the box already has code, ask: replace, add to end, or cancel.
+  async function putText(text, label) {
+    const box = $('code');
+    if (box.value.trim()) {
+      $('askText').textContent = 'The box already has code. What should I do with ' + label + '?';
+      const choice = await new Promise(res => {
+        const d = $('ask');
+        const done = v => () => { d.close(); res(v); };
+        $('askReplace').onclick = done('replace');
+        $('askAdd').onclick = done('add');
+        $('askCancel').onclick = done('cancel');
+        d.oncancel = () => res('cancel');
+        d.showModal();
+      });
+      if (choice === 'cancel') return msg('');
+      if (choice === 'add') { box.value = box.value.replace(/\s*$/, '') + '\n' + text; return msg('Added ' + label + ' to the end'); }
+    }
+    box.value = text;
+    msg('Loaded ' + label);
+  }
+
+  // Paste button: read the clipboard (the browser may ask permission the first time).
+  $('paste').onclick = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text.trim()) return msg('The clipboard is empty.', true);
+      putText(text, 'the pasted text');
+    } catch (e) {
+      msg('Could not read the clipboard. Tap and hold in the box, then choose Paste.', true);
+    }
+  };
+
   // drag & drop a text/HTML file to fill the box
   const dropOk = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
   ['dragenter', 'dragover'].forEach(ev => window.addEventListener(ev, e => {
@@ -149,23 +187,7 @@
     const text = await f.text();
     if (text.indexOf('\u0000') !== -1 || text.indexOf('\uFFFD') !== -1)
       return msg("That doesn't look like a text file.", true);
-    const box = $('code');
-    if (box.value.trim()) {
-      $('askText').textContent = 'The box already has code. What should I do with ' + f.name + '?';
-      const choice = await new Promise(res => {
-        const d = $('ask');
-        const done = v => () => { d.close(); res(v); };
-        $('askReplace').onclick = done('replace');
-        $('askAdd').onclick = done('add');
-        $('askCancel').onclick = done('cancel');
-        d.oncancel = () => res('cancel');
-        d.showModal();
-      });
-      if (choice === 'cancel') return msg('');
-      if (choice === 'add') { box.value = box.value.replace(/\s*$/, '') + '\n' + text; return msg('Added ' + f.name + ' to the end'); }
-    }
-    box.value = text;
-    msg('Loaded ' + f.name);
+    putText(text, f.name);
   });
 
   // allow Tab key in textarea

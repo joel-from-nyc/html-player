@@ -12,7 +12,7 @@
     margin: 0; min-height: 100vh; display: flex; flex-direction: column;
     font-family: system-ui, sans-serif; background: #14161f; color: #e8e8f0;
   }
-  header { padding: 16px 24px 0; }
+  header { padding: 16px 24px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
   h1 { margin: 0; font-size: 1.5rem; }
   p.sub { margin: 4px 0 0; color: #9aa; font-size: .95rem; }
   main { flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 24px; }
@@ -24,6 +24,9 @@
   textarea:focus { outline: none; border-color: #5b8cff; }
   body.dragging textarea { border-color: #2e9e5b; background: #10201a; }
   .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  #bar { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; }
+  #bar button { white-space: nowrap; padding: 12px clamp(10px, 3vw, 22px); font-size: clamp(.8rem, 3.8vw, 1rem); }
+  #bar button.primary { font-size: clamp(.9rem, 4.2vw, 1.1rem); }
   button {
     font: inherit; font-weight: 600; padding: 12px 22px; border: 0; border-radius: 8px;
     cursor: pointer; color: #fff; background: #2b3047;
@@ -33,10 +36,15 @@
   #msg { color: #8fd; min-height: 1.2em; }
   #msg.err { color: #f88; }
   small { color: #789; }
-  #ver { cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: background .25s, color .25s; user-select: none; }
+  #ver { font-size: .72rem; color: #678; flex: none; cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: background .25s, color .25s; user-select: none; }
   #ver.flash { background: #2e9e5b; color: #fff; }
   #ver.flash.white { background: #fff; color: #14161f; }
   footer { display: flex; justify-content: space-between; gap: 16px; padding: 0 24px 14px; color: #678; font-size: .8rem; }
+  @media (max-width: 420px) {
+    header, main, footer { padding-inline: 12px; }
+    #bar { gap: 6px; }
+    #bar button { padding-inline: 9px; }
+  }
   dialog { background: #1b1f2e; color: #e8e8f0; border: 2px solid #5b8cff; border-radius: 12px; padding: 20px 24px; max-width: 420px; }
   dialog::backdrop { background: rgba(0,0,0,.6); }
   dialog p { margin: 0 0 16px; }
@@ -45,24 +53,26 @@
 </head>
 <body>
 <header>
-  <h1>🎮 Paste &amp; Play</h1>
-  <p class="sub">Paste your HTML</p>
+  <div>
+    <h1>🎮 Paste &amp; Play</h1>
+    <p class="sub">Paste your HTML</p>
+  </div>
+  <span id="ver" title="Tap to check for updates">v0.1.10</span>
 </header>
 
 <main id="editor">
   <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off"
     placeholder="Paste your HTML"></textarea>
-  <div class="row">
+  <span id="msg"></span>
+  <div id="bar">
     <button class="primary" id="play">▶ Play</button>
     <button id="clear">Clear</button>
-    <span id="msg"></span>
     <button id="sample" style="margin-left:auto">Show sample game</button>
   </div>
 </main>
 
 <footer>
   <span>Nothing opened? Allow pop-ups for this site (icon at the right end of the address bar).</span>
-  <span id="ver" title="Tap to check for updates">v0.1.9</span>
 </footer>
 
 <dialog id="ask">

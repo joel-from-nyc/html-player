@@ -73,7 +73,7 @@
     <button id="redo" class="icon" aria-label="Redo" title="Redo" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg>
     </button>
-    <span id="ver" title="Check for updates">v0.1.22</span>
+    <span id="ver" title="Check for updates">v0.1.23</span>
   </div>
 </header>
 
@@ -184,7 +184,13 @@
       if (!text.trim()) return msg('The clipboard is empty.', true);
       putText(text, 'the pasted text');
     } catch (e) {
-      msg('Could not read the clipboard. Tap and hold in the box, then choose Paste.', true);
+      // Clipboard access was refused (Ctrl+V still works, it needs no permission).
+      // Put the cursor in the box so the keyboard shortcut works right away.
+      codeBox.focus();
+      const touch = matchMedia('(pointer: coarse)').matches;
+      const key = /Mac|iPhone|iPad/.test(navigator.userAgent) ? 'Cmd+V' : 'Ctrl+V';
+      msg(touch ? 'Paste is blocked. Tap and hold in the box, then choose Paste.'
+                : 'Paste is blocked here. Press ' + key + ' in the box instead.', true);
     }
   };
 

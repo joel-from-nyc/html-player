@@ -1,92 +1,210 @@
 <!DOCTYPE html>
-<title>Cat vs Dog</title>
+<title>Game</title>
+
 <style>
-  body { margin: 0; height: 100vh; display: grid; place-items: center;
-         background: #234; color: white; font: bold 5vmin sans-serif; text-align: center; }
-  #board { position: relative; display: grid;
-           grid-template-columns: repeat(3, 22vmin); gap: 1.5vmin; }
-  #board svg { position: absolute; inset: 0; width: 100%; height: 100%;
-               pointer-events: none; overflow: visible; }
-  .square { height: 22vmin; font-size: 14vmin; border: 0; border-radius: 2vmin;
-            background: #fff3; }
-  #newGame { font-size: 4vmin; padding: 1vmin 3vmin; color: white;
-             background: #fff3; border: 0; border-radius: 2vmin; }
+  /* ==========================================================
+     SETTINGS: change these to make the game look like yours!
+     ========================================================== */
+  :root {
+
+    /* COLORS: use a color name (like tomato) or a code (like #ff8800) */
+    --page-color:   #223344;   /* the whole page behind the game */
+    --board-color:  #162331;   /* the panel the squares sit on */
+    --square-color: #3b4f63;   /* each empty square */
+    --line-color:   gold;      /* the line through the winning squares */
+    --text-color:   white;
+
+    /* SHAPE OF THE SQUARES: pick one of these pairs and copy it below.
+         Rounded squares:  --roundness: 2vmin;  --clip: none;
+         Sharp squares:    --roundness: 0;      --clip: none;
+         Circles:          --roundness: 50%;    --clip: none;
+         Hexagons:         --roundness: 0;
+                           --clip: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+    */
+    --roundness: 2vmin;
+    --clip: none;
+  }
+
+
+  /* ==========================================================
+     LOOKS: you can leave everything below alone
+     ========================================================== */
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2vmin;
+    background: var(--page-color);
+    color: var(--text-color);
+    font: bold 5vmin sans-serif;
+    text-align: center;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 7vmin;
+  }
+
+  #board {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 20vmin);
+    gap: 1.5vmin;
+    padding: 1.5vmin;
+    background: var(--board-color);
+    border-radius: 3vmin;
+  }
+
+  .square {
+    height: 20vmin;
+    font-size: 12vmin;
+    border: 0;
+    background: var(--square-color);
+    border-radius: var(--roundness);
+    clip-path: var(--clip);
+  }
+
+  /* the winning line is drawn on top of the board */
+  #board svg {
+    position: absolute;
+    left: 1.5vmin;
+    top: 1.5vmin;
+    width: calc(100% - 3vmin);
+    height: calc(100% - 3vmin);
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  #newGame {
+    font-size: 4vmin;
+    padding: 1vmin 3vmin;
+    color: var(--text-color);
+    background: var(--square-color);
+    border: 0;
+    border-radius: 2vmin;
+  }
 </style>
 
+
+<h1 id="title"></h1>
 <div id="message"></div>
 <div id="board"></div>
 <button id="newGame" onclick="newGame()">New game</button>
 
+
 <script>
-// Want different players? Change these two emoji!
-const PLAYER_1 = '🐱';
-const PLAYER_2 = '🐶';
+  // ==========================================================
+  // SETTINGS: change these to make the game your own!
+  // ==========================================================
 
-// The squares are numbered 0 to 8, left to right, top to bottom.
-// These are all 8 ways to win: 3 rows, 3 columns and 2 diagonals.
-const WINNING_LINES = [
-  [0, 1, 2], [3, 4, 5], [6, 7, 8],
-  [0, 3, 6], [1, 4, 7], [2, 5, 8],
-  [0, 4, 8], [2, 4, 6],
-];
+  // The name of your game (shows on the page and in the browser tab)
+  const GAME_TITLE = 'Cat vs Dog';
 
-let squares;         // what is in each square: '' (empty) or a player's emoji
-let currentPlayer;   // whose turn it is
-let gameOver;
+  // The two players: pick any emoji and any name you like
+  const PLAYER_1 = {emoji: '🐱', name: 'Cat'};
+  const PLAYER_2 = {emoji: '🐶', name: 'Dog'};
 
-function newGame() {
-  squares = ['', '', '', '', '', '', '', '', ''];
-  currentPlayer = PLAYER_1;
-  gameOver = false;
-  draw(currentPlayer + "'s turn");
-}
 
-function play(i) {
-  if (squares[i] !== '' || gameOver) return;   // ignore taken squares
-  squares[i] = currentPlayer;
+  // ==========================================================
+  // THE GAME: you can leave everything below alone at first
+  // ==========================================================
 
-  const winningLine = findWinningLine();
-  if (winningLine) {
-    gameOver = true;
-    draw(currentPlayer + ' wins! 🎉', winningLine);
-  } else if (!squares.includes('')) {          // no empty squares left
-    gameOver = true;
-    draw("It's a tie!");
-  } else {
-    currentPlayer = (currentPlayer === PLAYER_1) ? PLAYER_2 : PLAYER_1;
-    draw(currentPlayer + "'s turn");
+  // The squares are numbered 0 to 8, left to right, top to bottom:
+  //     0 1 2
+  //     3 4 5
+  //     6 7 8
+  // These are all 8 ways to win: 3 rows, 3 columns and 2 diagonals.
+  const WINNING_LINES = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6],
+  ];
+
+  let squares;         // what is in each square: '' (empty) or a player's emoji
+  let currentPlayer;   // whose turn it is
+  let gameOver;
+
+  document.title = GAME_TITLE;
+  title.textContent = GAME_TITLE;
+
+
+  // Start a fresh game
+  function newGame() {
+    squares = ['', '', '', '', '', '', '', '', ''];
+    currentPlayer = PLAYER_1;
+    gameOver = false;
+    draw(whoIs(currentPlayer) + "'s turn");
   }
-}
 
-// Find a line where all 3 squares belong to the current player
-function findWinningLine() {
-  return WINNING_LINES.find(line =>
-    line.every(i => squares[i] === currentPlayer));
-}
 
-function draw(text, winningLine) {
-  message.textContent = text;
-  board.innerHTML = '';
-  for (let i = 0; i < 9; i++) {
-    board.innerHTML += `<button class="square" onclick="play(${i})">${squares[i]}</button>`;
+  // Someone clicked square number i
+  function play(i) {
+    if (squares[i] !== '' || gameOver) return;   // ignore taken squares
+    squares[i] = currentPlayer.emoji;
+
+    const winningLine = findWinningLine();
+
+    if (winningLine) {
+      gameOver = true;
+      draw(whoIs(currentPlayer) + ' wins! 🎉', winningLine);
+    } else if (!squares.includes('')) {          // no empty squares left
+      gameOver = true;
+      draw("It's a tie!");
+    } else {
+      currentPlayer = (currentPlayer === PLAYER_1) ? PLAYER_2 : PLAYER_1;
+      draw(whoIs(currentPlayer) + "'s turn");
+    }
   }
-  if (winningLine) drawWinningLine(winningLine);
-}
 
-function drawWinningLine(line) {
-  // Each square is 1 unit wide, so square number i has its middle at:
-  const first = {x: line[0] % 3 + 0.5, y: Math.floor(line[0] / 3) + 0.5};
-  const last  = {x: line[2] % 3 + 0.5, y: Math.floor(line[2] / 3) + 0.5};
-  // Stretch the line a little past both ends
-  const moreX = Math.sign(last.x - first.x) * 0.65;
-  const moreY = Math.sign(last.y - first.y) * 0.65;
-  board.innerHTML += `
-    <svg viewBox="0 0 3 3">
-      <line x1="${first.x - moreX}" y1="${first.y - moreY}"
-            x2="${last.x + moreX}" y2="${last.y + moreY}"
-            stroke="gold" stroke-width="0.09" stroke-linecap="round" />
-    </svg>`;
-}
 
-newGame();
+  // Find a line where all 3 squares belong to the current player
+  function findWinningLine() {
+    return WINNING_LINES.find(line =>
+      line.every(i => squares[i] === currentPlayer.emoji));
+  }
+
+
+  // For example: "🐱 Cat"
+  function whoIs(player) {
+    return player.emoji + ' ' + player.name;
+  }
+
+
+  // Show the message and all 9 squares
+  function draw(text, winningLine) {
+    message.textContent = text;
+    board.innerHTML = '';
+
+    for (let i = 0; i < 9; i++) {
+      board.innerHTML += `<button class="square" onclick="play(${i})">${squares[i]}</button>`;
+    }
+
+    if (winningLine) drawWinningLine(winningLine);
+  }
+
+
+  // Draw a line through the 3 winning squares
+  function drawWinningLine(line) {
+    // Each square is 1 unit wide, so the middle of square number i is at:
+    const first = {x: line[0] % 3 + 0.5, y: Math.floor(line[0] / 3) + 0.5};
+    const last  = {x: line[2] % 3 + 0.5, y: Math.floor(line[2] / 3) + 0.5};
+
+    // Stretch the line a little past both ends
+    const moreX = Math.sign(last.x - first.x) * 0.65;
+    const moreY = Math.sign(last.y - first.y) * 0.65;
+
+    board.innerHTML += `
+      <svg viewBox="0 0 3 3">
+        <line x1="${first.x - moreX}" y1="${first.y - moreY}"
+              x2="${last.x + moreX}" y2="${last.y + moreY}"
+              style="stroke: var(--line-color)"
+              stroke-width="0.09" stroke-linecap="round" />
+      </svg>`;
+  }
+
+
+  newGame();
 </script>

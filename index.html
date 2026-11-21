@@ -13,7 +13,8 @@
     font-family: system-ui, sans-serif; background: #14161f; color: #e8e8f0;
   }
   header { padding: 16px 24px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  h1 { margin: 0; font-size: 1.5rem; }
+  h1 { margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+  h1 img { display: block; }
   p.sub { margin: 4px 0 0; color: #9aa; font-size: .95rem; }
   main { flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 24px; }
   textarea {
@@ -29,7 +30,10 @@
   #bar button.primary { font-size: clamp(.9rem, 4.2vw, 1.1rem); }
   #bar #paste { background: #2f6fe0; padding-inline: 14px; display: inline-flex; align-items: center; }
   #bar #clear { background: #8a2c36; }
-  button.linkbtn { background: none; padding: 0; color: #8ab; font-size: .8rem; font-weight: 400; text-decoration: underline; white-space: nowrap; }
+  #bar #sample { margin-left: auto; font-size: clamp(.72rem, 3.2vw, .9rem); font-weight: 500; }
+  #sample .short { display: none; }
+  @media (max-width: 300px) { #bar button { padding-inline: 6px !important; } #bar #paste { padding-inline: 10px !important; } }
+  @media (max-width: 420px) { #sample .long { display: none; } #sample .short { display: inline; } }
   button {
     font: inherit; font-weight: 600; padding: 12px 22px; border: 0; border-radius: 8px;
     cursor: pointer; color: #fff; background: #2b3047;
@@ -57,10 +61,10 @@
 <body>
 <header>
   <div>
-    <h1>🎮 Paste &amp; Play</h1>
+    <h1><img src="favicon.svg" alt="" width="34" height="34"> Paste &amp; Play</h1>
     <p class="sub">Paste your HTML</p>
   </div>
-  <span id="ver" title="Tap to check for updates">v0.1.13</span>
+  <span id="ver" title="Tap to check for updates">v0.1.14</span>
 </header>
 
 <main id="editor">
@@ -73,12 +77,12 @@
     </button>
     <button class="primary" id="play">▶ Play</button>
     <button id="clear">Clear</button>
+    <button id="sample"><span class="long">Show sample</span><span class="short">Sample</span></button>
   </div>
 </main>
 
 <footer>
   <span>Nothing opened? Allow pop-ups for this site (icon at the right end of the address bar).</span>
-  <button id="sample" class="linkbtn">Show sample game</button>
 </footer>
 
 <dialog id="ask">

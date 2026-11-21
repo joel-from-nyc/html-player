@@ -32,6 +32,7 @@
   #msg { color: #8fd; min-height: 1.2em; }
   #msg.err { color: #f88; }
   small { color: #789; }
+  footer { display: flex; justify-content: space-between; gap: 16px; padding: 0 24px 14px; color: #678; font-size: .8rem; }
   dialog { background: #1b1f2e; color: #e8e8f0; border: 2px solid #5b8cff; border-radius: 12px; padding: 20px 24px; max-width: 420px; }
   dialog::backdrop { background: rgba(0,0,0,.6); }
   dialog p { margin: 0 0 16px; }
@@ -54,6 +55,11 @@
   </div>
 </main>
 
+<footer>
+  <span>Nothing opened? Allow pop-ups for this site (icon at the right end of the address bar).</span>
+  <span>v0.1.5</span>
+</footer>
+
 <dialog id="ask">
   <p id="askText"></p>
   <div class="row">
@@ -69,16 +75,31 @@
   const msg = (t, err) => { $('msg').textContent = t; $('msg').className = err ? 'err' : ''; };
 
   // ---- run a game as its own top-level page (so fullscreen works) ----
+  // Content-Security-Policy added to every game: no outside network, scripts,
+  // frames or form posts. Inline code, canvas, audio, inputs and localStorage still work.
+  const CSP = "default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob:; " +
+    "style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; font-src data:; " +
+    "worker-src blob:; connect-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'";
+  const META = '<meta http-equiv="Content-Security-Policy" content="' + CSP + '">';
+
+  function withPolicy(html) {
+    // insert right after any leading comments/doctype so the doctype (and layout mode) is kept
+    const m = html.match(/^\s*(?:<!--[\s\S]*?-->\s*)*(?:<!doctype[^>]*>)?/i);
+    const i = m ? m[0].length : 0;
+    return html.slice(0, i) + META + html.slice(i);
+  }
+
   function blobUrl(html) {
-    return URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+    return URL.createObjectURL(new Blob([withPolicy(html)], { type: 'text/html;charset=utf-8' }));
   }
 
   $('play').onclick = () => {
     const html = $('code').value;
     if (!html.trim()) return msg('Paste some code first!', true);
     const w = window.open(blobUrl(html), '_blank');
-    if (!w) msg('Pop-up blocked. Allow pop-ups for this site and try again.', true);
-    else msg('');
+    if (!w) return msg('Your browser blocked the new tab. Click the pop-up icon at the right end of the address bar and choose "Always allow", then press Play again.', true);
+    try { w.opener = null; } catch (e) {}   // game tab can't reach back to this page
+    msg('');
   };
 
   $('clear').onclick = () => { $('code').value = ''; msg(''); };

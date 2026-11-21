@@ -2,42 +2,50 @@
 <title>Snake</title>
 <body style="margin:0;background:#123;color:#fff;text-align:center;
   font:5vmin sans-serif;touch-action:none">
-<div id=s>Swipe or use arrow keys</div>
-<canvas id=c width=400 height=400 style="width:85vmin"></canvas>
+<div id=score>Arrow keys or swipe</div>
+<canvas id=board width=400 height=400 style="width:85vmin;background:#000"></canvas>
 <script>
-const g = c.getContext('2d'), N = 20, rand = () => Math.random() * N | 0;
-let snake = [[10, 10]], dx = 1, dy = 0, last = [1, 0], food = [5, 5];
+const pen = board.getContext('2d');
+pen.font = '16px serif';
+const rand = () => Math.floor(Math.random() * 20);
+let snake = [{x: 10, y: 10}];        // the first one is the head
+let food = {x: 5, y: 5};
+let dx = 1, dy = 0;                  // direction: moving right
 
 function step() {
-  const x = snake[0][0] + dx, y = snake[0][1] + dy;
-  const crash = x < 0 || y < 0 || x >= N || y >= N ||
-    snake.some(p => p[0] == x && p[1] == y);
-  if (crash) {                                // hit a wall or ourselves
-    s.textContent = 'Crashed! Score ' + (snake.length - 1);
-    snake = [[10, 10]]; dx = 1; dy = 0; last = [1, 0]; return;
+  const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+  const hitWall = head.x < 0 || head.x > 19 || head.y < 0 || head.y > 19;
+  const hitSelf = snake.some(s => s.x == head.x && s.y == head.y);
+  if (hitWall || hitSelf) {          // crashed: start over
+    score.textContent = 'Crashed! Score ' + (snake.length - 1);
+    snake = [{x: 10, y: 10}]; dx = 1; dy = 0;
+    return;
   }
-  snake.unshift([x, y]);                      // grow the head
-  last = [dx, dy];
-  if (x == food[0] && y == food[1]) {         // ate it: keep the tail
-    food = [rand(), rand()];
-    s.textContent = 'Score: ' + (snake.length - 1);
-  } else snake.pop();                         // otherwise drop the tail
-  g.fillStyle = '#000'; g.fillRect(0, 0, 400, 400);
-  g.fillStyle = 'red'; g.fillRect(food[0] * 20, food[1] * 20, 18, 18);
-  g.fillStyle = 'lime';
-  snake.forEach(p => g.fillRect(p[0] * 20, p[1] * 20, 18, 18));
+  snake.unshift(head);               // add a new head
+  if (head.x == food.x && head.y == food.y) {
+    food = {x: rand(), y: rand()};   // ate it: keep the tail, so we grow
+    score.textContent = 'Score ' + (snake.length - 1);
+  } else snake.pop();                // didn't eat: remove the tail
 }
-function turn(x, y) {                         // no instant U-turns
-  if (x != -last[0] || y != -last[1]) { dx = x; dy = y; }
+function draw() {
+  pen.clearRect(0, 0, 400, 400);
+  pen.fillText('🍎', food.x * 20, food.y * 20 + 16);
+  snake.forEach((s, i) => {
+    pen.fillText(i == 0 ? '🐍' : '🟢', s.x * 20, s.y * 20 + 16);
+  });
 }
-const KEYS = {ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0]};
-onkeydown = e => KEYS[e.key] && turn(...KEYS[e.key]);
-let p0;                                       // swipe: press, drag, release
-onpointerdown = e => p0 = e;
-onpointerup = e => {
-  const sx = e.clientX - p0.clientX, sy = e.clientY - p0.clientY;
-  if (Math.hypot(sx, sy) < 20) return;
-  if (Math.abs(sx) > Math.abs(sy)) turn(Math.sign(sx), 0); else turn(0, Math.sign(sy));
+onkeydown = e => {
+  if (e.key == 'ArrowUp')    { dx = 0;  dy = -1; }
+  if (e.key == 'ArrowDown')  { dx = 0;  dy = 1; }
+  if (e.key == 'ArrowLeft')  { dx = -1; dy = 0; }
+  if (e.key == 'ArrowRight') { dx = 1;  dy = 0; }
 };
-setInterval(step, 120);
+let sx, sy;                          // swiping on a phone
+onpointerdown = e => { sx = e.clientX; sy = e.clientY; };
+onpointerup = e => {
+  const mx = e.clientX - sx, my = e.clientY - sy;
+  if (Math.abs(mx) > Math.abs(my)) { dx = Math.sign(mx); dy = 0; }
+  else { dx = 0; dy = Math.sign(my); }
+};
+setInterval(() => { step(); draw(); }, 120);
 </script>

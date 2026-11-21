@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<title>Snake</title>
+<body style="margin:0;background:#123;color:#fff;text-align:center;
+  font:5vmin sans-serif;touch-action:none">
+<div id=s>Swipe or use arrow keys</div>
+<canvas id=c width=400 height=400 style="width:85vmin"></canvas>
+<script>
+const g = c.getContext('2d'), N = 20, rand = () => Math.random() * N | 0;
+let snake = [[10, 10]], dx = 1, dy = 0, last = [1, 0], food = [5, 5];
+
+function step() {
+  const x = snake[0][0] + dx, y = snake[0][1] + dy;
+  const crash = x < 0 || y < 0 || x >= N || y >= N ||
+    snake.some(p => p[0] == x && p[1] == y);
+  if (crash) {                                // hit a wall or ourselves
+    s.textContent = 'Crashed! Score ' + (snake.length - 1);
+    snake = [[10, 10]]; dx = 1; dy = 0; last = [1, 0]; return;
+  }
+  snake.unshift([x, y]);                      // grow the head
+  last = [dx, dy];
+  if (x == food[0] && y == food[1]) {         // ate it: keep the tail
+    food = [rand(), rand()];
+    s.textContent = 'Score: ' + (snake.length - 1);
+  } else snake.pop();                         // otherwise drop the tail
+  g.fillStyle = '#000'; g.fillRect(0, 0, 400, 400);
+  g.fillStyle = 'red'; g.fillRect(food[0] * 20, food[1] * 20, 18, 18);
+  g.fillStyle = 'lime';
+  snake.forEach(p => g.fillRect(p[0] * 20, p[1] * 20, 18, 18));
+}
+function turn(x, y) {                         // no instant U-turns
+  if (x != -last[0] || y != -last[1]) { dx = x; dy = y; }
+}
+const KEYS = {ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0]};
+onkeydown = e => KEYS[e.key] && turn(...KEYS[e.key]);
+let p0;                                       // swipe: press, drag, release
+onpointerdown = e => p0 = e;
+onpointerup = e => {
+  const sx = e.clientX - p0.clientX, sy = e.clientY - p0.clientY;
+  if (Math.hypot(sx, sy) < 20) return;
+  if (Math.abs(sx) > Math.abs(sy)) turn(Math.sign(sx), 0); else turn(0, Math.sign(sy));
+};
+setInterval(step, 120);
+</script>

@@ -12,9 +12,13 @@
     margin: 0; min-height: 100vh; display: flex; flex-direction: column;
     font-family: system-ui, sans-serif; background: #14161f; color: #e8e8f0;
   }
-  header { padding: 16px 24px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  h1 { margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
-  h1 img { display: block; }
+  header { padding: 16px 24px 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px 12px; }
+  #top { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+  button.icon { padding: 6px 8px; background: none; border: 1px solid #2b3047; color: #9ab; display: inline-flex; border-radius: 8px; }
+  button:disabled { opacity: .3; cursor: default; }
+  button:disabled:hover { filter: none; }
+  h1 { margin: 0; font-size: clamp(1.05rem, 5.4vw, 1.5rem); display: flex; align-items: center; gap: 8px; }
+  h1 img { display: block; width: clamp(26px, 8vw, 34px); height: auto; }
   main { flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 24px; }
   textarea {
     flex: 1; min-height: 50vh; width: 100%; resize: vertical;
@@ -24,17 +28,19 @@
   textarea:focus { outline: none; border-color: #5b8cff; }
   body.dragging textarea { border-color: #2e9e5b; background: #10201a; }
   .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-  #bar { display: flex; flex-wrap: nowrap; gap: 8px; align-items: stretch; }
-  #bar button { white-space: nowrap; padding: 12px clamp(10px, 3vw, 22px); font-size: clamp(.8rem, 3.8vw, 1rem); }
-  #bar button.primary { font-size: clamp(.9rem, 4.2vw, 1.1rem); }
-  #bar #paste { background: #2f6fe0; padding-inline: 14px; display: inline-flex; align-items: center; }
-  #bar #upload { background: #e8861a; padding-inline: 14px; display: inline-flex; align-items: center; }
+  #bar { display: flex; flex-wrap: nowrap; gap: clamp(4px, 1.6vw, 8px); align-items: stretch; }
+  #bar button { white-space: nowrap; padding: 12px clamp(7px, 2.4vw, 20px); font-size: clamp(.72rem, 3.7vw, 1rem); }
+  #bar button.primary { font-size: clamp(.8rem, 4.1vw, 1.1rem); }
+  #bar #paste, #bar #upload, #bar #save { padding-inline: clamp(7px, 2.6vw, 14px); display: inline-flex; align-items: center; }
+  #bar svg { width: clamp(18px, 5.6vw, 22px); height: clamp(18px, 5.6vw, 22px); }
+  #bar #paste { background: #2f6fe0; }
+  #bar #upload { background: #e8861a; }
+  #bar #save { background: #a8913a; }
+  #bar #sample { background: #b4788c; margin-left: auto; }
   #bar #clear { background: #8a2c36; }
-  #bar #sample { margin-left: auto; }
   #sample .short { display: none; }
-  @media (max-width: 380px) { #bar { gap: 4px; } #bar button { padding-inline: 7px !important; } #bar #paste, #bar #upload { padding-inline: 8px !important; } #bar svg { width: 20px; height: 20px; } }
-  @media (max-width: 300px) { #bar button { padding-inline: 5px !important; font-size: .75rem !important; } #bar #paste, #bar #upload { padding-inline: 6px !important; } }
-  @media (max-width: 420px) { #sample .long { display: none; } #sample .short { display: inline; } }
+  @media (max-width: 700px) { #sample .long { display: none; } #sample .short { display: inline; } }
+  @media (max-width: 300px) { #bar button, #bar #paste, #bar #upload, #bar #save { padding-inline: 4px; } }
   button {
     font: inherit; font-weight: 600; padding: 12px 22px; border: 0; border-radius: 8px;
     cursor: pointer; color: #fff; background: #2b3047;
@@ -50,8 +56,6 @@
   footer { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; padding: 0 24px 14px; color: #678; font-size: .8rem; }
   @media (max-width: 420px) {
     header, main, footer { padding-inline: 12px; }
-    #bar { gap: 6px; }
-    #bar button { padding-inline: 9px; }
   }
   dialog { background: #1b1f2e; color: #e8e8f0; border: 2px solid #5b8cff; border-radius: 12px; padding: 20px 24px; max-width: 420px; }
   dialog::backdrop { background: rgba(0,0,0,.6); }
@@ -61,10 +65,16 @@
 </head>
 <body>
 <header>
-  <div>
-    <h1><img src="favicon.svg" alt="" width="34" height="34"> Paste &amp; Play</h1>
+  <h1><img src="favicon.svg" alt="" width="34" height="34"> Paste &amp; Play</h1>
+  <div id="top">
+    <button id="undo" class="icon" aria-label="Undo" title="Undo" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+    </button>
+    <button id="redo" class="icon" aria-label="Redo" title="Redo" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg>
+    </button>
+    <span id="ver" title="Check for updates">v0.1.22</span>
   </div>
-  <span id="ver" title="Tap to check for updates">v0.1.21</span>
 </header>
 
 <main id="editor">
@@ -72,16 +82,19 @@
     placeholder="Paste your HTML or drop a file here."></textarea>
   <span id="msg"></span>
   <div id="bar">
-    <button id="paste" aria-label="Paste from clipboard" title="Paste from clipboard">
+    <button id="paste" aria-label="Paste" title="Paste">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/></svg>
     </button>
     <button id="upload" aria-label="Upload a file" title="Upload a file">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
     </button>
     <input type="file" id="file" hidden>
-    <button class="primary" id="play">▶ Play</button>
-    <button id="clear">Clear</button>
-    <button id="sample"><span class="long">Show sample</span><span class="short">Sample</span></button>
+    <button class="primary" id="play" title="Play">▶ Play</button>
+    <button id="save" aria-label="Save as" title="Save as">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v6h8V3"/><path d="M7 21v-7h10v7"/></svg>
+    </button>
+    <button id="sample" title="Sample game"><span class="long">Show sample</span><span class="short">Sample</span></button>
+    <button id="clear" title="Clear">Clear</button>
   </div>
 </main>
 
@@ -104,8 +117,6 @@
   const msg = (t, err) => { $('msg').textContent = t; $('msg').className = err ? 'err' : ''; };
 
   // ---- run a game as its own top-level page (so fullscreen works) ----
-  // Content-Security-Policy added to every game: no outside network, scripts,
-  // frames or form posts. Inline code, canvas, audio, inputs and localStorage still work.
   // No content restrictions: games can load libraries, fonts, images and make network requests.
   function blobUrl(html) {
     return URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
@@ -125,7 +136,7 @@
     try {
       const r = await fetch('examples/tictactoe.html');
       if (!r.ok) throw 0;
-      $('code').value = await r.text();
+      setBox(await r.text());
       msg('Sample loaded. Press Play!');
     } catch (e) { msg("Couldn't load the sample game.", true); }
   };
@@ -143,7 +154,7 @@
     setTimeout(() => ver.classList.remove('flash', 'white'), 1000);
   };
 
-  $('clear').onclick = () => { $('code').value = ''; msg(''); };
+  $('clear').onclick = () => { setBox(''); msg(''); };
 
   // Put text in the box. If the box already has code, ask: replace, add to end, or cancel.
   async function putText(text, label) {
@@ -160,9 +171,9 @@
         d.showModal();
       });
       if (choice === 'cancel') return msg('');
-      if (choice === 'add') { box.value = box.value.replace(/\s*$/, '') + '\n' + text; return msg('Added ' + label + ' to the end'); }
+      if (choice === 'add') { setBox(box.value.replace(/\s*$/, '') + '\n' + text); return msg('Added ' + label + ' to the end'); }
     }
-    box.value = text;
+    setBox(text);
     msg('Loaded ' + label);
   }
 
@@ -206,13 +217,71 @@
   $('upload').onclick = () => $('file').click();
   $('file').onchange = e => { loadFile(e.target.files[0]); e.target.value = ''; };
 
+  // ---- Undo / redo: our own list of steps, so it also covers Paste, Upload, Clear, Sample ----
+  const codeBox = $('code');
+  let steps = [''], pos = 0, typingTimer;
+  function updateUndoRedo() {
+    $('undo').disabled = !(pos > 0 || codeBox.value !== steps[pos]);
+    $('redo').disabled = pos >= steps.length - 1;
+  }
+  function record() {                       // remember the box's current text (if it changed)
+    clearTimeout(typingTimer);
+    if (codeBox.value !== steps[pos]) {
+      steps = steps.slice(0, pos + 1);  // typing after an undo drops the redo steps
+      steps.push(codeBox.value);
+      if (steps.length > 200) steps.shift();
+      pos = steps.length - 1;
+    }
+    updateUndoRedo();
+  }
+  function setBox(text) { record(); codeBox.value = text; record(); }
+  function undo() { record(); if (pos > 0) { pos--; codeBox.value = steps[pos]; } updateUndoRedo(); msg(''); }
+  function redo() { record(); if (pos < steps.length - 1) { pos++; codeBox.value = steps[pos]; } updateUndoRedo(); msg(''); }
+  $('undo').onclick = undo;
+  $('redo').onclick = redo;
+  codeBox.addEventListener('input', () => { clearTimeout(typingTimer); typingTimer = setTimeout(record, 500); updateUndoRedo(); });
+  codeBox.addEventListener('keydown', e => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+    else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); }
+  });
+
+  // ---- Save as: write the box to an .html file ----
+  $('save').onclick = async () => {
+    const text = codeBox.value;
+    if (!text.trim()) return msg('Nothing to save yet.', true);
+    const title = (text.match(/<title>\s*([^<]*?)\s*<\/title>/i) || [])[1] || '';
+    const fileName = (title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'my-game') + '.html';
+    msg('');
+    try {
+      if (window.showSaveFilePicker) {      // a real "Save as" window (Chrome, Chromebooks)
+        const handle = await showSaveFilePicker({ suggestedName: fileName, types: [{ description: 'HTML file', accept: { 'text/html': ['.html'] } }] });
+        const out = await handle.createWritable();
+        await out.write(text);
+        await out.close();
+        msg('Saved ' + handle.name);
+      } else {                              // other browsers: a normal download
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([text], { type: 'text/html;charset=utf-8' }));
+        a.download = fileName;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        msg('Saved ' + fileName);
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') msg("Couldn't save the file.", true);   // cancelling is fine
+    }
+  };
+
   // allow Tab key in textarea
-  $('code').addEventListener('keydown', e => {
+  codeBox.addEventListener('keydown', e => {
     if (e.key !== 'Tab') return;
     e.preventDefault();
     const t = e.target, s = t.selectionStart;
     t.value = t.value.slice(0, s) + '  ' + t.value.slice(t.selectionEnd);
     t.selectionStart = t.selectionEnd = s + 2;
+    t.dispatchEvent(new Event('input'));
   });
 
 })();

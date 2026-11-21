@@ -7,11 +7,11 @@
      ========================================================== */
   :root {
 
-    /* COLORS: use a color name (like tomato) or a code (like #ff8800) */
-    --page-color:   #223344;   /* the whole page behind the game */
-    --board-color:  #162331;   /* the panel the squares sit on */
-    --square-color: #3b4f63;   /* each empty square */
-    --line-color:   gold;      /* the line through the winning squares */
+    /* COLORS: use a color name, like tomato, hotpink or skyblue */
+    --page-color:   darkslategray;   /* the whole page behind the game */
+    --board-color:  black;           /* the panel the squares sit on */
+    --square-color: slategray;       /* each empty square */
+    --line-color:   gold;            /* the line through the winning squares */
     --text-color:   white;
 
     /* SHAPE OF THE SQUARES: pick one of these pairs and copy it below.
@@ -25,10 +25,6 @@
     --clip: none;
   }
 
-
-  /* ==========================================================
-     LOOKS: you can leave everything below alone
-     ========================================================== */
   body {
     margin: 0;
     height: 100vh;
@@ -107,10 +103,6 @@
   const PLAYER_1 = {emoji: '🐱', name: 'Cat'};
   const PLAYER_2 = {emoji: '🐶', name: 'Dog'};
 
-
-  // ==========================================================
-  // THE GAME: you can leave everything below alone at first
-  // ==========================================================
 
   // The squares are numbered 0 to 8, left to right, top to bottom:
   //     0 1 2

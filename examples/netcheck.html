@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Net check</title>
+<body style="margin:0;padding:16px;background:#111;color:#eee;font:14px/1.5 monospace;white-space:pre-wrap">
+<div id=o>Running checks…</div>
+<script>
+const out = [], show = () => document.getElementById('o').textContent = out.join('\n');
+const log = (k, v) => { out.push(k.padEnd(22) + v); show(); };
+const URL3 = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+log('page url', location.href.slice(0, 60));
+log('origin', location.origin);
+log('CSP violations', '(listening)');
+const viol = [];
+document.addEventListener('securitypolicyviolation', e => { viol.push(e.violatedDirective); });
+try { const c = document.createElement('canvas'); log('WebGL', (c.getContext('webgl2') ? 'webgl2 ok' : c.getContext('webgl') ? 'webgl ok' : 'NOT available')); } catch (e) { log('WebGL', 'error ' + e.message); }
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, r) => setTimeout(() => r(new Error('timed out after ' + ms / 1000 + 's')), ms))]);
+(async () => {
+  try { const r = await withTimeout(fetch(URL3), 8000); log('fetch jsdelivr', 'HTTP ' + r.status + ' ' + (await r.text()).length + ' bytes'); }
+  catch (e) { log('fetch jsdelivr', 'FAILED: ' + e.message); }
+  try { await withTimeout(new Promise((ok, no) => { const s = document.createElement('script'); s.src = URL3.replace('.module.js', '.min.js'); s.onload = ok; s.onerror = () => no(new Error('script error')); document.head.appendChild(s); }), 8000); log('classic <script>', 'loaded, THREE=' + (typeof THREE)); }
+  catch (e) { log('classic <script>', 'FAILED: ' + e.message); }
+  try { const m = await withTimeout(import(URL3), 8000); log('module import()', 'loaded, REVISION=' + m.REVISION); }
+  catch (e) { log('module import()', 'FAILED: ' + e.message); }
+  log('CSP violations', viol.length ? viol.join(', ') : 'none');
+  log('userAgent', navigator.userAgent.slice(0, 70));
+  log('DONE', 'send this screen to Claude');
+})();
+</script>

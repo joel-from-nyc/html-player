@@ -7,7 +7,7 @@ html-player.5moreminutes.games. Cloudflare redirects several alternate names to 
 
 Every project that shows a version number should have this behavior:
 
-- The version number is visible somewhere on the page (here: bottom right).
+- The version number is visible somewhere on the page (here: top right).
 - Clicking or tapping it checks whether a newer version is live:
   - Newest version already: flash the version label white and green.
   - Newer version available: reload the page.

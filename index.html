@@ -48,19 +48,28 @@
   textarea:focus { outline: none; border-color: #5b8cff; }
   body.dragging textarea { border-color: #2e9e5b; background: #10201a; }
   .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-  #bar { display: flex; flex-wrap: nowrap; gap: clamp(4px, 1.6vw, 8px); align-items: stretch; }
-  #bar button { white-space: nowrap; padding: 12px clamp(7px, 2.4vw, 20px); font-size: clamp(.72rem, 3.7vw, 1rem); }
-  #bar button.primary { font-size: clamp(.8rem, 4.1vw, 1.1rem); }
-  #bar #paste, #bar #upload, #bar #save { padding-inline: clamp(6px, 2.2vw, 14px); display: inline-flex; align-items: center; }
-  #bar svg { width: clamp(18px, 5.6vw, 22px); height: clamp(18px, 5.6vw, 22px); }
+  /* Bottom buttons: icon + word when there is room. When there isn't, the JS adds
+     "compact" and every button except Play shows just its icon (all on or all off). */
+  #bar { display: flex; flex-wrap: nowrap; gap: 8px; align-items: stretch; }
+  #bar button { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; padding: 12px 16px; font-size: 1rem; }
+  #bar button.primary { font-size: 1.1rem; }
+  #bar svg { width: 20px; height: 20px; flex: none; }
   #bar #paste { background: #2f6fe0; }
-  #bar #upload { background: #e8861a; margin-left: clamp(3px, 1.8vw, 18px); }   /* a little gap after Play */
+  #bar #upload { background: #e8861a; margin-left: 16px; }   /* a little gap after Play */
   #bar #save { background: #a8913a; }
   #bar #sample { background: #b4788c; margin-left: auto; }
   #bar #clear { background: #8a2c36; }
-  #sample .short { display: none; }
-  @media (max-width: 700px) { #sample .long { display: none; } #sample .short { display: inline; } }
-  @media (max-width: 300px) { #bar button, #bar #paste, #bar #upload, #bar #save { padding-inline: 4px; } #bar #upload { margin-left: 2px; } #bar { gap: 3px; } }
+  #bar.compact { gap: clamp(4px, 1.6vw, 8px); }
+  #bar.compact .label { display: none; }
+  #bar.compact button { padding: 12px clamp(6px, 2.2vw, 14px); font-size: clamp(.72rem, 3.7vw, 1rem); }
+  #bar.compact button.primary { padding-inline: clamp(7px, 2.4vw, 20px); font-size: clamp(.8rem, 4.1vw, 1.1rem); }
+  #bar.compact svg { width: clamp(18px, 5.6vw, 22px); height: clamp(18px, 5.6vw, 22px); }
+  #bar.compact #upload { margin-left: clamp(3px, 1.8vw, 18px); }
+  @media (max-width: 300px) {
+    #bar.compact { gap: 3px; }
+    #bar.compact button { padding-inline: 4px; }
+    #bar.compact #upload { margin-left: 2px; }
+  }
   button {
     font: inherit; font-weight: 600; padding: 12px 22px; border: 0; border-radius: 8px;
     cursor: pointer; color: #fff; background: #2b3047;
@@ -93,7 +102,7 @@
     <button id="redo" class="icon" aria-label="Redo" title="Redo" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg>
     </button>
-    <span id="ver" title="Check for updates">v0.1.26</span>
+    <span id="ver" title="Check for updates">v0.1.27</span>
   </div>
 </header>
 
@@ -110,17 +119,26 @@
   <div id="bar">
     <button id="paste" aria-label="Paste" title="Paste">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/></svg>
+      <span class="label">Paste</span>
     </button>
     <button class="primary" id="play" title="Play">▶ Play</button>
     <button id="upload" aria-label="Upload a file" title="Upload a file">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+      <span class="label">Upload</span>
     </button>
     <input type="file" id="file" hidden>
     <button id="save" aria-label="Save as" title="Save as">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v6h8V3"/><path d="M7 21v-7h10v7"/></svg>
+      <span class="label">Save as</span>
     </button>
-    <button id="sample" title="Sample game"><span class="long">Show sample</span><span class="short">Sample</span></button>
-    <button id="clear" title="Clear">Clear</button>
+    <button id="sample" aria-label="Sample game" title="Sample game">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 10.5v4M5 12.5h4"/><path d="M16 11.5h.01M18.5 13.5h.01"/></svg>
+      <span class="label">Sample</span>
+    </button>
+    <button id="clear" aria-label="Clear" title="Clear">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+      <span class="label">Clear</span>
+    </button>
   </div>
 </main>
 
@@ -175,6 +193,16 @@
       msg('Sample loaded. Press Play!');
     } catch (e) { msg("Couldn't load the sample game.", true); }
   };
+
+  // Bottom buttons: show words if they all fit on one row, otherwise icons only.
+  function fitBar() {
+    const bar = $('bar');
+    bar.classList.remove('compact');
+    if (bar.scrollWidth > bar.clientWidth + 1) bar.classList.add('compact');
+  }
+  fitBar();
+  addEventListener('resize', fitBar);
+  if (document.fonts) document.fonts.ready.then(fitBar);
 
   // Tap the version: if a newer version is live, reload; if not, flash white/green.
   $('ver').onclick = async () => {

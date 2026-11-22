@@ -35,6 +35,23 @@
     #wrap[aria-pressed]:hover svg { display: none; }
     #wrap[aria-pressed="true"]:hover .i-nowrap, #wrap[aria-pressed="false"]:hover .i-wrap { display: block; opacity: .55; }
   }
+  /* smaller header buttons on phones so the title and all four still share one line */
+  @media (max-width: 420px) {
+    #top { gap: 2px; }
+    button.icon { padding: 5px 6px; }
+    button.icon svg { width: 16px; height: 16px; }
+  }
+  @media (max-width: 380px) {
+    header { gap: 6px; }
+    h1 { font-size: clamp(1rem, 4.8vw, 1.5rem); gap: 6px; }
+    h1 img { width: 24px; }
+    header #ver { padding-inline: 3px; }
+  }
+  @media (max-width: 340px) {
+    button.icon { padding: 4px 5px; }
+    button.icon svg { width: 15px; height: 15px; }
+    header #ver { padding-inline: 3px; }
+  }
   button:disabled { opacity: .3; cursor: default; }
   button:disabled:hover { filter: none; }
   h1 { margin: 0; font-size: clamp(1.05rem, 5.4vw, 1.5rem); display: flex; align-items: center; gap: 8px; }
@@ -102,7 +119,13 @@
     <button id="redo" class="icon" aria-label="Redo" title="Redo" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg>
     </button>
-    <span id="ver" title="Check for updates">v0.1.27</span>
+    <button id="copy" class="icon" aria-label="Copy" title="Copy">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    </button>
+    <button id="paste2" class="icon" aria-label="Paste" title="Paste">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/></svg>
+    </button>
+    <span id="ver" title="Check for updates">v0.1.28</span>
   </div>
 </header>
 
@@ -112,7 +135,7 @@
       placeholder="Paste your HTML or drop a file here."></textarea>
     <button id="wrap" aria-label="Word wrap" aria-pressed="true" title="Turn word wrap off">
       <svg class="i-wrap" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M3 12h15a3 3 0 1 1 0 6h-4"/><path d="M16 16l-2 2 2 2"/><path d="M3 18h7"/></svg>
-      <svg class="i-nowrap" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h14"/><path d="M3 12h18"/><path d="M3 18h10"/><path d="M18 9l3 3-3 3"/></svg>
+      <svg class="i-nowrap" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M3 12h12"/><path d="M3 18h18"/><path d="M18 15l3 3-3 3"/></svg>
     </button>
   </div>
   <span id="msg"></span>
@@ -181,10 +204,8 @@
       const r = await fetch('examples/tictactoe.html');
       if (!r.ok) throw 0;
       let text = await r.text();
-      // Easter egg: every 100th time the sample is loaded (counted in this browser)
-      let count = 0;
-      try { count = (parseInt(localStorage.getItem('sampleCount')) || 0) + 1; localStorage.setItem('sampleCount', count); } catch (e) {}
-      if (count % 100 === 0) {
+      // Easter egg: a 1 in 100 chance each time the sample is loaded
+      if (Math.random() < 0.01) {
         text = text.replace("'Cats vs Dogs'", "'Wizards vs Dragons'")
                    .replace("{emoji: '🐱', name: 'Cat'}", "{emoji: '🧙‍♂️', name: 'Wizard'}")
                    .replace("{emoji: '🐶', name: 'Dog'}", "{emoji: '🐲', name: 'Dragon'}");
@@ -241,7 +262,7 @@
   }
 
   // Paste button: read the clipboard (the browser may ask permission the first time).
-  $('paste').onclick = async () => {
+  async function doPaste() {
     try {
       const text = await navigator.clipboard.readText();
       if (!text.trim()) return msg('The clipboard is empty.', true);
@@ -255,7 +276,28 @@
       msg(touch ? 'Paste is blocked. Tap and hold in the box, then choose Paste.'
                 : 'Paste is blocked here. Press ' + key + ' in the box instead.', true);
     }
-  };
+  }
+  $('paste').onclick = doPaste;
+  $('paste2').onclick = doPaste;
+
+  // Copy button: copies the highlighted text, or everything if nothing is highlighted.
+  async function doCopy() {
+    const start = codeBox.selectionStart, end = codeBox.selectionEnd;   // the highlight survives clicking a button
+    const hasSelection = end > start;
+    const text = hasSelection ? codeBox.value.slice(start, end) : codeBox.value;
+    if (!text) return msg('Nothing to copy yet.', true);
+    const done = hasSelection ? 'Copied selection' : 'Copied';
+    try {
+      await navigator.clipboard.writeText(text);
+      msg(done);
+    } catch (e) {                                  // clipboard blocked: try the older way
+      codeBox.focus();
+      if (hasSelection) codeBox.setSelectionRange(start, end); else codeBox.select();
+      if (document.execCommand('copy')) msg(done);
+      else msg("Couldn't copy. Press Ctrl+C in the box instead.", true);
+    }
+  }
+  $('copy').onclick = doCopy;
 
   // Read a text/HTML file into the box (shared by drag & drop and the upload button).
   async function loadFile(f) {
